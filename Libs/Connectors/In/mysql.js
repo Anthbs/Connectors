@@ -1,3 +1,6 @@
+/*jslint node: true */
+"use strict";
+
 var q = require('q');
 var util = require('util');
 var base_connection = require('../base_connection.js');
@@ -13,7 +16,7 @@ function MySqlConnection(address, port, username, password) {
     this.port = port;
     this.username = username;
     this.password = password;
-};
+}
 
 util.inherits(MySqlConnection, base_connection);
 
@@ -22,7 +25,7 @@ MySqlConnection.prototype.Connect = function () {
 
     this.connection = mysql.createConnection({
         host: this.address,
-        port: this.port
+        port: this.port,
         user: this.username,
         password: this.password
     });
@@ -32,7 +35,7 @@ MySqlConnection.prototype.Connect = function () {
             deferred.reject();
         }
 
-        console.log('connected as id ' + connection.threadId);
+        console.log('connected as id ' + this.connection.threadId);
         mysqlUtilities.upgrade(this.connection);
         mysqlUtilities.introspection(this.connection);
         deferred.resolve(this.connection);

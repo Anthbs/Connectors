@@ -1,9 +1,12 @@
+/*jslint node: true */
+"use strict";
+
 var q = require('q');
 
 function BaseConnection(type, direction) {
     this.type = type;
     this.direction = direction;
-};
+}
 
 BaseConnection.prototype.getType = function () {
     return this.type;
