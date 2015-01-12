@@ -3,9 +3,9 @@
 
 var q = require('q');
 var util = require('util');
-var base_connection = require('../base_connection.js');
+var base_connection = require('../../base_connection.js');
 var mysql = require('mysql');
-var mysqlUtilities = require('utilities');
+var mysqlUtilities = require('mysql-utilities');
 
 
 
@@ -39,7 +39,17 @@ MySqlConnection.prototype.Connect = function () {
         mysqlUtilities.upgrade(this.connection);
         mysqlUtilities.introspection(this.connection);
         deferred.resolve(this.connection);
-    });
+    }.bind(this));
 
     return deferred.promise;
 };
+
+MySqlConnection.prototype.Databases = function () {
+    this.connection.databases(function (err, databases) {
+        console.dir({
+            databases: databases
+        });
+    });
+};
+
+module.exports = MySqlConnection;

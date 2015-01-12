@@ -1,7 +1,10 @@
-var mysql = require('./mysql.js');
-var rest = require('./rest.js');
+/*jslint node: true */
+"use strict";
+
+var MySql = require('./mysql.js');
+var Rest = require('./rest.js');
 
 module.exports = {
-    mysql: mysql,
-    rest: rest
+    MySql: MySql,
+    Rest: Rest
 };
