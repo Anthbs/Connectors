@@ -45,11 +45,29 @@ MySqlConnection.prototype.Connect = function () {
 };
 
 MySqlConnection.prototype.Databases = function () {
+    var deferred = q.defer();
+
     this.connection.databases(function (err, databases) {
         console.dir({
             databases: databases
         });
+        deferred.resolve(databases);
     });
+
+    return deferred.promise;
+};
+
+MySqlConnection.prototype.Models = function (database) {
+    var deferred = q.defer();
+
+    this.connection.databaseTables(database, function (err, tables) {
+        console.dir({
+            tables: tables
+        });
+        deferred.resolve(tables);
+    });
+
+    return deferred.promise;
 };
 
 module.exports = MySqlConnection;
