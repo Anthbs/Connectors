@@ -19,6 +19,7 @@
     "mysql": "^2.5.4",
     "mysql-utilities": "^1.0.6",
     "q": "^1.1.2",
+    "underscore": "^1.7.0",
     "utilities": "^1.0.4"
   }
 }

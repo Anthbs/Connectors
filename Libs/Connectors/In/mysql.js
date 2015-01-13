@@ -6,6 +6,7 @@ var util = require('util');
 var base_connection = require('../../base_connection.js');
 var mysql = require('mysql');
 var mysqlUtilities = require('mysql-utilities');
+var _ = require('underscore');
 
 
 
@@ -44,14 +45,29 @@ MySqlConnection.prototype.Connect = function () {
     return deferred.promise;
 };
 
+MySqlConnection.prototype.UseDB = function (database) {
+    var deferred = q.defer();
+
+    this.connection.query("USE " + database + ";", function (err, rows) {
+        if (err) {
+            console.log(err);
+            return deferred.reject(err);
+        }
+        deferred.resolve(rows);
+    });
+
+    return deferred.promise;
+};
+
 MySqlConnection.prototype.Databases = function () {
     var deferred = q.defer();
 
     this.connection.databases(function (err, databases) {
-        console.dir({
-            databases: databases
-        });
-        deferred.resolve(databases);
+        if (err) {
+            console.log(err);
+            return deferred.reject(err);
+        }
+        deferred.resolve(_.without(databases, 'mysql', 'information_schema', 'performance_schema'));
     });
 
     return deferred.promise;
@@ -61,10 +77,25 @@ MySqlConnection.prototype.Models = function (database) {
     var deferred = q.defer();
 
     this.connection.databaseTables(database, function (err, tables) {
-        console.dir({
-            tables: tables
-        });
-        deferred.resolve(tables);
+        if (err) {
+            console.log(err);
+            return deferred.reject(err);
+        }
+        deferred.resolve(_.pluck(tables, 'TABLE_NAME'));
+    });
+
+    return deferred.promise;
+};
+
+MySqlConnection.prototype.Fields = function (database, model) {
+    var deferred = q.defer();
+
+    this.connection.db_fields(database, model, function (err, fields) {
+        if (err) {
+            console.log(err);
+            return deferred.reject(err);
+        }
+        deferred.resolve(fields);
     });
 
     return deferred.promise;
