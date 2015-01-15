@@ -10,13 +10,14 @@ var _ = require('underscore');
 
 
 
-function MySqlConnection(address, port, username, password) {
+function MySqlConnection(address, port, database, username, password) {
     base_connection.apply(this, ["MySql", "In"]); //Type, Direction
 
     this.address = address;
     this.port = port;
     this.username = username;
     this.password = password;
+    this.database = database;
 }
 
 util.inherits(MySqlConnection, base_connection);
@@ -28,7 +29,8 @@ MySqlConnection.prototype.Connect = function () {
         host: this.address,
         port: this.port,
         user: this.username,
-        password: this.password
+        password: this.password,
+        database: this.database
     });
     this.connection.connect(function (err) {
         if (err) {
@@ -48,13 +50,29 @@ MySqlConnection.prototype.Connect = function () {
 MySqlConnection.prototype.UseDB = function (database) {
     var deferred = q.defer();
 
-    this.connection.query("USE " + database + ";", function (err, rows) {
-        if (err) {
-            console.log(err);
-            return deferred.reject(err);
-        }
-        deferred.resolve(rows);
+    if (this.connection != null) {
+        this.connection.end();
+    }
+
+    this.connection = mysql.createConnection({
+        host: this.address,
+        port: this.port,
+        user: this.username,
+        password: this.password,
+        db: this.database
     });
+
+    connection.connect(function (err) {
+        if (err) {
+            console.error('error connecting: ' + err.stack);
+            deferred.reject();
+        }
+
+        console.log('connected as id ' + this.connection.threadId);
+        mysqlUtilities.upgrade(this.connection);
+        mysqlUtilities.introspection(this.connection);
+        deferred.resolve(this.connection);
+    }.bind(this));
 
     return deferred.promise;
 };
@@ -73,10 +91,10 @@ MySqlConnection.prototype.Databases = function () {
     return deferred.promise;
 };
 
-MySqlConnection.prototype.Models = function (database) {
+MySqlConnection.prototype.Models = function () {
     var deferred = q.defer();
 
-    this.connection.databaseTables(database, function (err, tables) {
+    this.connection.tables(function (err, tables) {
         if (err) {
             console.log(err);
             return deferred.reject(err);
@@ -87,10 +105,10 @@ MySqlConnection.prototype.Models = function (database) {
     return deferred.promise;
 };
 
-MySqlConnection.prototype.Fields = function (database, model) {
+MySqlConnection.prototype.Fields = function (model) {
     var deferred = q.defer();
 
-    this.connection.db_fields(database, model, function (err, fields) {
+    this.connection.fields(model, function (err, fields) {
         if (err) {
             console.log(err);
             return deferred.reject(err);
@@ -100,5 +118,65 @@ MySqlConnection.prototype.Fields = function (database, model) {
 
     return deferred.promise;
 };
+
+MySqlConnection.prototype.QueryBuilder = function (model, join_tables, fields, parameters) {
+    var fields_query = [];
+    var joins_query = [];
+    var parameters_query = [];
+    var pq = "SELECT <%= fields_query %> FROM <%= model %> <%= joins_query %>";
+    if(parameters != null && parameters.length > 0) {
+        pq += " WHERE <%= parameters_query %>";
+    }
+
+    var template = _.template(pq);
+    var fields_template = _.template(" <%= identifier %>.<%= field %> ");
+    var parameter_template = _.template(" <%= identifier %>.<%= key %> ");
+    var join_table_template = _.template(" JOIN <%= table_to.table %> <%= identifier %> ON <%= table_from.table %>.<%= table_from.field %> = <%= identifier %>.<%= table_to.field %>");
+
+    if (fields != null && fields.length > 0) {
+        fields.forEach(function (field) {
+            fields_query.push(fields_template(field));
+        });
+    } else {
+        fields.push("*");
+    }
+
+    if (join_tables != null && join_tables.length > 0) {
+        join_tables.forEach(function (join_table) {
+            joins_query.push(join_table_template(join_table));
+        });
+    }
+
+    if (parameters != null && parameters.length > 0) {
+        parameters.forEach(function (parameter) {
+            parameters_query.push(parameter_template(parameter));
+        });
+    }
+
+    return template({
+        model: model,
+        fields_query: fields_query.join(", "),
+        joins_query: joins_query.join(" "),
+        parameters_query: parameters_query.join(" AND ")
+    });
+};
+
+MySqlConnection.prototype.Get = function (model, join_tables, fields, parameters) {
+    var deferred = q.defer();
+
+    var query = this.QueryBuilder(model, join_tables, fields, parameters);
+    console.log(query);
+    this.connection.query(query, function (err, fields) {
+        if (err) {
+            console.log(err);
+            return deferred.reject(err);
+        }
+        deferred.resolve(fields);
+    });
+
+    return deferred.promise;
+};
+
+
 
 module.exports = MySqlConnection;
