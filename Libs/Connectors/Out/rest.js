@@ -1,3 +1,6 @@
+/*jslint node: true */
+"use strict";
+
 var each = require('mekanika-utils-each');
 var express = require("express");
 var bodyParser = require('body-parser');
@@ -41,24 +44,24 @@ Rest.prototype.Start = function (mappings) {
         mappings_promises.push(this.CreateRoute(mapping));
     }.bind(this), mappings);
 
-    q.all(mappings_promises).then(function() {
+    q.all(mappings_promises).then(function () {
         this.app.route(this.base_path + "routes").get(function (req, res) {
             res.json(this.routes);
         }.bind(this));
         this.app.listen(this.port);
         console.log("Rest API started: " + this.port);
     }.bind(this));
-}
+};
 
 Rest.prototype.Stop = function () {
 
-}
+};
 
 Rest.prototype.CreateParameters = function (parameters) {
     var str = parameters.length > 0 ? "/:" : "";
 
     return str + _.pluck(parameters, "placeholder").join("/:");
-}
+};
 
 Rest.prototype.CreateRoute = function (mapping) {
     var deferred = q.defer();
@@ -75,6 +78,6 @@ Rest.prototype.CreateRoute = function (mapping) {
     deferred.resolve();
     console.log("Created Route: " + this.base_path + mapping.url + parameters_string);
     return deferred.promise;
-}
+};
 
 module.exports = Rest;
