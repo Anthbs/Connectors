@@ -38,7 +38,7 @@ MySqlConnection.prototype.Connect = function () {
             deferred.reject();
         }
 
-        console.log('connected as id ' + this.connection.threadId);
+        //console.log('connected as id ' + this.connection.threadId);
         mysqlUtilities.upgrade(this.connection);
         mysqlUtilities.introspection(this.connection);
         deferred.resolve(this.connection);
@@ -119,18 +119,18 @@ MySqlConnection.prototype.Fields = function (model) {
     return deferred.promise;
 };
 
-MySqlConnection.prototype.QueryBuilder = function (model, join_tables, fields, parameters) {
+MySqlConnection.prototype.QueryBuilder = function (model, join_tables, fields, parameters, values) {
     var fields_query = [];
     var joins_query = [];
     var parameters_query = [];
-    var pq = "SELECT <%= fields_query %> FROM <%= model %> <%= joins_query %>";
+    var pq = "SELECT<%= fields_query %> FROM <%= model %><%= joins_query %>";
     if(parameters != null && parameters.length > 0) {
-        pq += " WHERE <%= parameters_query %>";
+        pq += " WHERE<%= parameters_query %>";
     }
 
     var template = _.template(pq);
-    var fields_template = _.template(" <%= identifier %>.<%= field %> ");
-    var parameter_template = _.template(" <%= identifier %>.<%= key %> ");
+    var fields_template = _.template(" <%= identifier %>.<%= field %>");
+    var parameter_template = _.template(" <%= identifier %>.<%= key %> <%= operation %> <%= value %>");
     var join_table_template = _.template(" JOIN <%= table_to.table %> <%= identifier %> ON <%= table_from.table %>.<%= table_from.field %> = <%= identifier %>.<%= table_to.field %>");
 
     if (fields != null && fields.length > 0) {
@@ -149,22 +149,23 @@ MySqlConnection.prototype.QueryBuilder = function (model, join_tables, fields, p
 
     if (parameters != null && parameters.length > 0) {
         parameters.forEach(function (parameter) {
+            parameter.value = values[parameter.placeholder];
             parameters_query.push(parameter_template(parameter));
         });
     }
 
     return template({
         model: model,
-        fields_query: fields_query.join(", "),
+        fields_query: fields_query.join(","),
         joins_query: joins_query.join(" "),
         parameters_query: parameters_query.join(" AND ")
     });
 };
 
-MySqlConnection.prototype.Get = function (model, join_tables, fields, parameters) {
+MySqlConnection.prototype.Get = function (model, join_tables, fields, parameters, values) {
     var deferred = q.defer();
 
-    var query = this.QueryBuilder(model, join_tables, fields, parameters);
+    var query = this.QueryBuilder(model, join_tables, fields, parameters, values);
     console.log(query);
     this.connection.query(query, function (err, fields) {
         if (err) {

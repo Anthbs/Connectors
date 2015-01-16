@@ -8,12 +8,9 @@ var rest_connector = new Connectors.Out.Rest("/api/", 5000, ms_connector);
 
 ms_connector.Connect().then(function (connection) {
     ms_connector.Models().then(function (models) {
-        console.dir({
-            models: models
-        });
         rest_connector.Start([
             {
-                url: "users/",
+                url: "users",
                 primary_table: "users",
                 required_tables: [
                     { identifier: "p", table_from: { table: "users", field: "person_id" }, table_to: { table: "people", field: "id" } }
@@ -24,7 +21,21 @@ ms_connector.Connect().then(function (connection) {
                     { identifier: "p", field: "last_name" },
                 ],
                 parameters: [
-                    { identifier: "users", key: "id" }
+                ]
+            },
+            {
+                url: "users",
+                primary_table: "users",
+                required_tables: [
+                    { identifier: "p", table_from: { table: "users", field: "person_id" }, table_to: { table: "people", field: "id" } }
+                ],
+                fields: [
+                    { identifier: "users", field: "username" },
+                    { identifier: "p", field: "first_name" },
+                    { identifier: "p", field: "last_name" },
+                ],
+                parameters: [
+                    { identifier: "users", key: "id", operation: "=", placeholder: "user_id" }
                 ]
             }
         ]);

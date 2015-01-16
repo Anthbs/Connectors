@@ -10,6 +10,7 @@ function Rest(base_path, port, in_connector) {
     this.base_path = base_path;
     this.port = port;
     this.in_connector = in_connector;
+    this.routes = [];
 }
 
 /* Example Mappings - SME Database
@@ -41,6 +42,9 @@ Rest.prototype.Start = function (mappings) {
     }.bind(this), mappings);
 
     q.all(mappings_promises).then(function() {
+        this.app.route(this.base_path + "routes").get(function (req, res) {
+            res.json(this.routes);
+        }.bind(this));
         this.app.listen(this.port);
         console.log("Rest API started: " + this.port);
     }.bind(this));
@@ -50,19 +54,26 @@ Rest.prototype.Stop = function () {
 
 }
 
+Rest.prototype.CreateParameters = function (parameters) {
+    var str = parameters.length > 0 ? "/:" : "";
+
+    return str + _.pluck(parameters, "placeholder").join("/:");
+}
+
 Rest.prototype.CreateRoute = function (mapping) {
     var deferred = q.defer();
 
-    this.app.route(this.base_path + mapping.url).get(function (req, res) {
-        var promise_route = this.in_connector.Get(mapping.primary_table, mapping.required_tables, mapping.fields, mapping.parameters).then(function (results) {
-            console.log("Results: ", results);
+    var parameters_string = this.CreateParameters(mapping.parameters);
+    this.app.route(this.base_path + mapping.url + parameters_string).get(function (req, res) {
+        var promise_route = this.in_connector.Get(mapping.primary_table, mapping.required_tables, mapping.fields, mapping.parameters, req.params).then(function (results) {
             res.json(results);
             return results;
         });
     }.bind(this));
+    this.routes.push(this.base_path + mapping.url + parameters_string);
 
     deferred.resolve();
-    console.log("Created Route: " + this.base_path + mapping.url);
+    console.log("Created Route: " + this.base_path + mapping.url + parameters_string);
     return deferred.promise;
 }
 
