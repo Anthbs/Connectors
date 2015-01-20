@@ -129,7 +129,7 @@ MySqlConnection.prototype.QueryBuilder = function (model, join_tables, fields, p
     }
 
     var template = _.template(pq);
-    var fields_template = _.template(" <%= identifier %>.<%= field %>");
+    var fields_template = _.template(" <%= table_identifier %>.<%= field %> as '<%= identifier %>'");
     var parameter_template = _.template(" <%= identifier %>.<%= key %> <%= operation %> <%= value %>");
     var join_table_template = _.template(" JOIN <%= table_to.table %> <%= identifier %> ON <%= table_from.table %>.<%= table_from.field %> = <%= identifier %>.<%= table_to.field %>");
 

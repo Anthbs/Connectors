@@ -57,26 +57,19 @@ Rest.prototype.Stop = function () {
 
 };
 
-Rest.prototype.CreateParameters = function (parameters) {
-    var str = parameters.length > 0 ? "/:" : "";
-
-    return str + _.pluck(parameters, "placeholder").join("/:");
-};
-
 Rest.prototype.CreateRoute = function (mapping) {
     var deferred = q.defer();
 
-    var parameters_string = this.CreateParameters(mapping.parameters);
-    this.app.route(this.base_path + mapping.url + parameters_string).get(function (req, res) {
+    this.app.route(this.base_path + mapping.url).get(function (req, res) {
         var promise_route = this.in_connector.Get(mapping.primary_table, mapping.required_tables, mapping.fields, mapping.parameters, req.params).then(function (results) {
             res.json(results);
             return results;
         });
     }.bind(this));
-    this.routes.push(this.base_path + mapping.url + parameters_string);
+    this.routes.push(this.base_path + mapping.url);
 
     deferred.resolve();
-    console.log("Created Route: " + this.base_path + mapping.url + parameters_string);
+    console.log("Created Route: " + this.base_path + mapping.url);
     return deferred.promise;
 };
 
