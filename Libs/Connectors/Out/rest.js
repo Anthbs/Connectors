@@ -59,13 +59,21 @@ Rest.prototype.Stop = function () {
 
 Rest.prototype.CreateRoute = function (mapping) {
     var deferred = q.defer();
-
-    this.app.route(this.base_path + mapping.url).get(function (req, res) {
-        var promise_route = this.in_connector.Get(mapping.primary_table, mapping.required_tables, mapping.fields, mapping.parameters, req.params).then(function (results) {
-            res.json(results);
-            return results;
-        });
-    }.bind(this));
+    if(mapping.method == 'POST') {
+        this.app.route(this.base_path + mapping.url).post(function (req, res) {
+            var promise_route = this.in_connector.Post(mapping.primary_table, mapping.required_tables, mapping.fields, mapping.parameters, req.params, req.body).then(function (results) {
+                res.json(results);
+                return results;
+            });
+        }.bind(this));
+    } else {
+        this.app.route(this.base_path + mapping.url).get(function (req, res) {
+            var promise_route = this.in_connector.Get(mapping.primary_table, mapping.required_tables, mapping.fields, mapping.parameters, req.params).then(function (results) {
+                res.json(results);
+                return results;
+            });
+        }.bind(this));
+    }
     this.routes.push(this.base_path + mapping.url);
 
     deferred.resolve();
